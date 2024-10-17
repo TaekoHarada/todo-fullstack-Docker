@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  # MySQL database service
+  database:
+    build: ./mysql
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: todo_database
+      MYSQL_USER: todouser
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306" # Expose MySQL on localhost:3306
+    volumes:
+      - todo-data:/var/lib/mysql # To persist database data
+    networks:
+      - todo-network
+
+  # Backend system service
+  backend:
+    build: ./backend
+    container_name: todo-backend-container
+    environment:
+      DB_HOST: database # Reference to the service name 'database'
+      DB_USER: todouser
+      DB_PASSWORD: password
+      DB_DATABASE: todo_database
+      APP_PORT: 5001
+      JWT_SECRET: secret
+      NODE_ENV: test
+    ports:
+      - "5001:5001" # Expose backend on localhost:5001
+    depends_on:
+      - database # Wait for the database container to be up before starting backend
+    networks:
+      - todo-network
+
+  # Frontend system service
+  frontend:
+    build: ./frontend
+    container_name: todo-frontend-container
+    ports:
+      - "3000:3000" # Expose frontend on localhost:3000 (adjust if needed)
+    depends_on:
+      - backend # Wait for the backend container to be up before starting frontend
+    networks:
+      - todo-network
+
+# Define a shared network for the services to communicate
+networks:
+  todo-network:
+
+# Define a volume for the MySQL database data persistence
+volumes:
+  todo-data:
