@@ -5,40 +5,32 @@ services:
   database:
     build: ./mysql
     container_name: mysql-container
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: todo_database
-      MYSQL_USER: todouser
-      MYSQL_PASSWORD: password
     ports:
       - "3306:3306" # Expose MySQL on localhost:3306
     volumes:
       - todo-data:/var/lib/mysql # To persist database data
     networks:
       - todo-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
 
   # Backend system service
   backend:
-    build: ./backend
+    build: ./todo-fullstack-backend-mysql
     container_name: todo-backend-container
-    environment:
-      DB_HOST: database # Reference to the service name 'database'
-      DB_USER: todouser
-      DB_PASSWORD: password
-      DB_DATABASE: todo_database
-      APP_PORT: 5001
-      JWT_SECRET: secret
-      NODE_ENV: test
     ports:
       - "5001:5001" # Expose backend on localhost:5001
     depends_on:
       - database # Wait for the database container to be up before starting backend
     networks:
       - todo-network
+    command: ["sh", "-c", "sleep 10 && npm start"] # Wait for the database container to be up before starting backend
 
   # Frontend system service
   frontend:
-    build: ./frontend
+    build: ./todo-fullstack-frontend
     container_name: todo-frontend-container
     ports:
       - "3000:3000" # Expose frontend on localhost:3000 (adjust if needed)
